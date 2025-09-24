@@ -123,24 +123,31 @@ void SysTick_Handler(void)
 }
 
 /*-------------------------------------------------*/
-/*函数名：串口1中断服务函数 (工人)                 */
+/*函数名：串口1中断服务函数 (健壮版本)             */
 /*-------------------------------------------------*/
 void USART1_IRQHandler(void)
 {
+    uint8_t received_char;
+
     if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
     {
-        // 只要仓库没满，就把新收到的货物放进去
-        if(usart1_rx_len < USART1_RXBUFF_SIZE)
+        // 1. 读取数据寄存器，这个操作会自动清除中断标志位
+        received_char = USART_ReceiveData(USART1);
+        
+        // 2. 检查缓冲区是否还有空间 (至少要留一个位置给 '\0')
+        if(usart1_rx_len < (USART1_RXBUFF_SIZE - 1))
         {
-            usart1_rx_buffer[usart1_rx_len++] = USART_ReceiveData(USART1);
+            usart1_rx_buffer[usart1_rx_len] = received_char;
+            usart1_rx_len++;
+            
+            // 3. 关键步骤：在每次接收后，都在数据末尾补上'\0'，确保它始终是有效的字符串
+            usart1_rx_buffer[usart1_rx_len] = '\0';
         }
         else
         {
-            // 仓库满了，丢掉这个货物，防止仓库爆炸
-            USART_ReceiveData(USART1);
+            // 缓冲区满了，可以选择清空或丢弃，这里我们保持清空策略以接收最新数据
+            usart1_rx_len = 0;
+            usart1_rx_buffer[0] = '\0';
         }
-        
-        // 清除中断标志，告诉CPU这个货物已经处理完了
-        USART_ClearITPendingBit(USART1, USART_IT_RXNE);
     }
 }

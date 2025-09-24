@@ -23,6 +23,5 @@ void u1_printf(char* fmt,...);
 
 // 在 usart1.h 的函数声明区域添加下面两行
 void clear_usart1_buffer(void);
-char* get_usart1_buffer(void);
-
+const char* get_usart1_buffer(void);
 #endif
