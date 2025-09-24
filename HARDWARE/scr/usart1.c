@@ -71,3 +71,23 @@ void u1_printf(char* fmt,...)
     }
 }
 
+// 在 usart1.c 的文件末尾添加这两个函数
+
+/**
+ * @brief 清空串口1的接收缓冲区
+ */
+void clear_usart1_buffer(void)
+{
+    memset(usart1_rx_buffer, 0, USART1_RXBUFF_SIZE);
+    usart1_rx_len = 0;
+}
+
+/**
+ * @brief 获取串口1接收缓冲区的指针
+ * @return 缓冲区的只读指针
+ */
+const char* get_usart1_buffer(void)
+{
+    return (const char*)usart1_rx_buffer;
+}
+

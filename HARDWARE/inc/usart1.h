@@ -21,4 +21,8 @@ extern volatile uint16_t usart1_rx_len; // 声明为 volatile，防止编译器�
 void Usart1_Init(unsigned int bound);
 void u1_printf(char* fmt,...);
 
+// 在 usart1.h 的函数声明区域添加下面两行
+void clear_usart1_buffer(void);
+char* get_usart1_buffer(void);
+
 #endif
