@@ -3,9 +3,10 @@
 #include "usart1.h"
 #include "stdio.h" 
 #include "delay.h"
-// #include "usart2.h" // 如果你没有用调试串口，可以注释掉
+#include "usart2.h" // 如果你没有用调试串口，可以注释掉
 #include "lcd.h"
 #include "pic.h"
+#include "led.h"
 
 // --- 1. OneNET 连接信息 ---
 #define DEVICE_NAME  "test"
@@ -27,12 +28,29 @@ int main(void)
     char json_buffer[256];
     long message_id = 100;
 
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+    // 初始化
     Usart1_Init(115200);
-    // Usart2_Init(115200); // 建议开启一个调试串口，方便看log
-    Delay_Init(); // 你的delay.c里有这个函数，最好调用一下
-
-    // --- 2. 初始化BC260Y并连接OneNET (可靠的交互式流程) ---
+    Usart2_Init(115200);
+    LED_Init();
+    
+    // 测试中断是否工作
+    u2_printf("Starting USART1 test...\r\n");
+    
+    // 发送测试命令
+    u1_printf("AT\r\n");
+    
+    // 等待并检查中断
+    delay_ms(100);
+    u2_printf("Interrupt test - Buffer length: %d, Content: %s\r\n", 
+           usart1_rx_len, get_usart1_buffer());
+    
+    if(usart1_rx_len > 0) {
+        u2_printf("Interrupt is working!\r\n");
+    } else {
+        u2_printf("Interrupt NOT working - checking configuration...\r\n");
+    }
+    
+    
     
     // 检查模块通信
     while(send_cmd("AT\r\n", "OK", 1000));
@@ -92,10 +110,13 @@ int main(void)
     }   
 }
 
+
 /**
  * @brief 解析服务器下发的命令
  * @param buffer 包含+QMTRECV的串口接收缓冲区内容
  */
+
+ 
 void parse_command(const char* buffer)
 {
     // 简单的解析示例，实际应用中可能需要更健壮的解析
@@ -133,37 +154,57 @@ void parse_command(const char* buffer)
     }
 }
 
+
+// 在你的led.h或者main.c顶部，确保有类似这样的宏定义
+// 假设LED1连接到某个GPIO，低电平点亮
+// #define LED1_ON()  GPIO_ResetBits(GPIOC, GPIO_Pin_13)
+// #define LED1_OFF() GPIO_SetBits(GPIOC, GPIO_Pin_13)
+
+
 /**
- * @brief 发送AT指令并等待预期响应（简化版）
+ * @brief 发送AT指令并等待预期响应（带LED调试）
  * @param cmd 要发送的指令
  * @param expected_rsp 期待的响应字符串，例如 "OK"
  * @param timeout_ms 超时时间
  * @return 0: 成功, 1: 失败/超时
  */
 int send_cmd(const char* cmd, const char* expected_rsp, uint32_t timeout_ms)
-{
+{   
+    delay_ms(50); 
     clear_usart1_buffer();
-    u1_printf((char*)cmd); // 发送指令
+    u1_printf((char*)cmd);
     
-    // 如果你有调试串口，在这里打印发送的指令会很有帮助
-    // u2_printf("SEND: %s", cmd);
-
     uint32_t time_elapsed = 0;
+    uint32_t check_interval = 10; // 减小检查间隔
+    
     while(time_elapsed < timeout_ms)
-    {
-        delay_ms(10);
-        time_elapsed += 10;
+    {       
+        delay_ms(check_interval);
+        time_elapsed += check_interval;
         
-        // 检查接收缓冲区中是否包含期望的响应
-        if (strstr(get_usart1_buffer(), expected_rsp) != NULL)
+        if (usart1_rx_len > 0)
         {
-            // u2_printf("RECV: %s\r\n", get_usart1_buffer()); // 调试输出
-            return 0; // 找到了，成功
+            // 确保字符串正确终止
+            usart1_rx_buffer[usart1_rx_len] = '\0';
+            
+            // 调试输出：可以添加串口打印接收到的数据
+            // printf("Received: %s\r\n", get_usart1_buffer());
+            
+            if (strstr(get_usart1_buffer(), expected_rsp) != NULL)
+            {
+                return 0; // 成功
+            }
+            
+            // 检查是否有错误响应
+            if (strstr(get_usart1_buffer(), "ERROR") != NULL)
+            {
+                return 1; // 错误
+            }
         }
     }
-    
-    // u2_printf("TIMEOUT for %s\r\n", cmd); // 调试输出
-    // u2_printf("Buffer content: %s\r\n", get_usart1_buffer());
     return 1; // 超时
 }
+
+
+
 

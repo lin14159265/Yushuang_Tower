@@ -122,32 +122,59 @@ void SysTick_Handler(void)
  
 }
 
-/*-------------------------------------------------*/
-/*函数名：串口1中断服务函数 (健壮版本)             */
-/*-------------------------------------------------*/
+
 void USART1_IRQHandler(void)
 {
-    uint8_t received_char;
-
-    if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
+    // 检查是否是接收中断
+    if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
     {
-        // 1. 读取数据寄存器，这个操作会自动清除中断标志位
-        received_char = USART_ReceiveData(USART1);
+        // 读取接收到的数据
+        uint8_t received_data = USART_ReceiveData(USART1);
         
-        // 2. 检查缓冲区是否还有空间 (至少要留一个位置给 '\0')
-        if(usart1_rx_len < (USART1_RXBUFF_SIZE - 1))
+        // 简化：只做必要的缓冲区操作
+        if (usart1_rx_len < USART1_RXBUFF_SIZE - 1)
         {
-            usart1_rx_buffer[usart1_rx_len] = received_char;
-            usart1_rx_len++;
-            
-            // 3. 关键步骤：在每次接收后，都在数据末尾补上'\0'，确保它始终是有效的字符串
-            usart1_rx_buffer[usart1_rx_len] = '\0';
+            usart1_rx_buffer[usart1_rx_len++] = received_data;
+            usart1_rx_buffer[usart1_rx_len] = '\0'; // 及时添加结束符
         }
         else
         {
-            // 缓冲区满了，可以选择清空或丢弃，这里我们保持清空策略以接收最新数据
+            // 缓冲区满了，从头开始
             usart1_rx_len = 0;
-            usart1_rx_buffer[0] = '\0';
+            usart1_rx_buffer[usart1_rx_len++] = received_data;
+            usart1_rx_buffer[usart1_rx_len] = '\0';
         }
+        
+        // 重要：手动清除中断标志
+        USART_ClearITPendingBit(USART1, USART_IT_RXNE);
+    }
+
+    // 清除溢出错误
+    if (USART_GetFlagStatus(USART1, USART_FLAG_ORE) == SET)
+    {
+        USART_ReceiveData(USART1);
+        USART_ClearFlag(USART1, USART_FLAG_ORE);
+    }
+}
+
+
+
+
+// 在stm32f10x_it.c中添加
+void USART2_IRQHandler(void)
+{
+    if(USART_GetITStatus(USART2, USART_IT_RXNE) != RESET)
+    {
+        uint8_t data = USART_ReceiveData(USART2);
+        
+#if USART2_RX_ENABLE
+        if(Usart2_RxCounter < USART2_RXBUFF_SIZE - 1)
+        {
+            Usart2_RxBuff[Usart2_RxCounter++] = data;
+            Usart2_RxBuff[Usart2_RxCounter] = '\0';
+        }
+#endif
+        
+        USART_ClearITPendingBit(USART2, USART_IT_RXNE);
     }
 }

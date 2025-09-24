@@ -1,8 +1,8 @@
 #include "usart1.h"
 
-/*---------- 全局变量定义 (建造仓库实体) ----------*/
+// usart1.c
 uint8_t usart1_rx_buffer[USART1_RXBUFF_SIZE];
-volatile uint16_t usart1_rx_len = 0; // 定义为 volatile
+volatile uint16_t usart1_rx_len = 0;
 
 // 发送缓冲区
 __attribute__((aligned(8))) char Usart1_TxBuff[USART1_TXBUFF_SIZE];
@@ -16,20 +16,21 @@ void Usart1_Init(unsigned int bound)
     USART_InitTypeDef USART_InitStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
 
+    // 使能时钟
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA, ENABLE);
 
-    // PA9 - TX
+    // 配置TX引脚 (PA9)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // PA10 - RX
+    // 配置RX引脚 (PA10)
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // USART1 配置
+    // USART参数配置
     USART_InitStructure.USART_BaudRate = bound;
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
     USART_InitStructure.USART_StopBits = USART_StopBits_1;
@@ -38,18 +39,21 @@ void Usart1_Init(unsigned int bound)
     USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
     USART_Init(USART1, &USART_InitStructure);
 
-    // 开启接收中断
+    // 重要：先使能USART，再配置中断
+    USART_Cmd(USART1, ENABLE);
+
+    // 清除所有 pending 的中断
+    USART_ClearITPendingBit(USART1, USART_IT_RXNE);
+    
+    // 使能接收中断
     USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 
-    // NVIC 配置
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+    // NVIC配置 - 使用更高的优先级
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; // 优先级可以根据你的系统调整
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0; // 提高优先级
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
-
-    USART_Cmd(USART1, ENABLE);
 }
 
 /*-------------------------------------------------*/
@@ -71,8 +75,6 @@ void u1_printf(char* fmt,...)
     }
 }
 
-// 在 usart1.c 的文件末尾添加这两个函数
-
 /**
  * @brief 清空串口1的接收缓冲区
  */
@@ -91,3 +93,11 @@ const char* get_usart1_buffer(void)
     return (const char*)usart1_rx_buffer;
 }
 
+/**
+ * @brief 获取当前接收数据长度
+ * @return 当前接收的数据长度
+ */
+uint16_t get_usart1_rx_len(void)
+{
+    return usart1_rx_len;
+}

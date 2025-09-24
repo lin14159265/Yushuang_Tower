@@ -27,6 +27,7 @@ USER/main.c\
 USER/global.c\
 HARDWARE/scr/delay.c\
 HARDWARE/scr/usart1.c\
+HARDWARE/scr/usart2.c\
 HARDWARE/scr/stm32f10x_it.c\
 HARDWARE/scr/led.c\
 HARDWARE/scr/timer2.c\

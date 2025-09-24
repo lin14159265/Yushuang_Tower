@@ -1,13 +1,13 @@
 #ifndef __LED_H
 #define __LED_H
 
-#define LED1_OUT(x)   GPIO_WriteBit(GPIOC, GPIO_Pin_13,  (BitAction)x)  //设置PA5  的电平，可以点亮熄灭LED1
-#define LED2_OUT(x)   GPIO_WriteBit(GPIOB, GPIO_Pin_1,  (BitAction)x)  //设置PB1  的电平，可以点亮熄灭LED2
+//#define LED1_OUT(x)   GPIO_WriteBit(GPIOC, GPIO_Pin_13,  (BitAction)x)  //设置PA5  的电平，可以点亮熄灭LED1
+//#define LED2_OUT(x)   GPIO_WriteBit(GPIOB, GPIO_Pin_1,  (BitAction)x)  //设置PB1  的电平，可以点亮熄灭LED2
 //#define LED3_OUT(x)   GPIO_WriteBit(GPIOB, GPIO_Pin_10, (BitAction)x)  //设置PB10 的电平，可以点亮熄灭LED3
 //#define LED4_OUT(x)   GPIO_WriteBit(GPIOB, GPIO_Pin_11, (BitAction)x)  //设置PB11 的电平，可以点亮熄灭LED4
 
-#define LED1_IN_STA   GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13)  //PA5  控制LED1,读取电平状态，可以判断LED1是点亮还是熄灭
-#define LED2_IN_STA   GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_1)  //PB1  控制LED2,读取电平状态，可以判断LED2是点亮还是熄灭
+//#define LED1_IN_STA   GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13)  //PA5  控制LED1,读取电平状态，可以判断LED1是点亮还是熄灭
+//#define LED2_IN_STA   GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_1)  //PB1  控制LED2,读取电平状态，可以判断LED2是点亮还是熄灭
 //#define LED3_IN_STA   GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_10) //PB10 控制LED3,读取电平状态，可以判断LED3是点亮还是熄灭
 //#define LED4_IN_STA   GPIO_ReadOutputDataBit(GPIOB, GPIO_Pin_11) //PB11 控制LED4,读取电平状态，可以判断LED4是点亮还是熄灭
 
